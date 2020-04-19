@@ -1,13 +1,12 @@
 name: "VS Marketplace Publisher"
 description: "Publish VisualStudio extension to the Marketplace"
-# inputs:
-#   who-to-greet:  # id of input
-#     description: 'Who to greet'
-#     required: true
-#     default: 'World'
+inputs:
+  token: # id of input
+    description: "Token to access you repository"
+    required: true
 outputs:
-  time: # id of output
-    description: "The time we greeted you"
+  asset_file:
+    description: "File path to downloaded asset"
 runs:
   using: "node12"
-  main: "dist/index.js"
+  main: "../dist/index.js"

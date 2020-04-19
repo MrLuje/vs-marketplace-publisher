@@ -6,16 +6,17 @@ on: [push]
 
 jobs:
   hello_world_job:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     name: A job to say hello
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Hello world action step
-        id: hello
+      - name: Download latest assets
+        id: download_asset
         uses: ./ #mrluje/vs-marketplace-publisher@v2
         with:
-          who-to-greet: "Mona the Octocat"
+          github_token: ${{ secrets.github_token }}
       # Use the output from the `hello` step
-      - name: Get the output time
-        run: echo "The time was ${{ steps.hello.outputs.time }}"
+      - name: Check downloaded file
+        run: |
+          dir ${{ steps.download_asset.outputs.asset_file }}

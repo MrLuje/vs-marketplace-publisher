@@ -8643,27 +8643,67 @@ module.exports = (promise, onFinally) => {
 
 "use strict";
 
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const core_1 = __importDefault(__webpack_require__(470));
-const github_1 = __importDefault(__webpack_require__(469));
-try {
-    // `who-to-greet` input defined in action metadata file
-    const token = process.env.GITHUB_TOKEN;
-    const client = new github_1.default.GitHub(token);
-    const releases = client.repos.listReleases.endpoint.merge({ page: 1 });
-    console.log("AL: releases", releases);
-    const time = new Date().toTimeString();
-    core_1.default.setOutput("time", time);
-    // Get the JSON webhook payload for the event that triggered the workflow
-    const payload = JSON.stringify(github_1.default.context.payload, undefined, 2);
-    console.log(`The event payload: ${payload}`);
+const core_1 = __webpack_require__(470);
+const github_1 = __webpack_require__(469);
+const fs_1 = __importDefault(__webpack_require__(747));
+const node_fetch_1 = __importDefault(__webpack_require__(454));
+const stream_1 = __webpack_require__(413);
+const util_1 = __importDefault(__webpack_require__(669));
+const streamPipeline = util_1.default.promisify(stream_1.pipeline);
+function run() {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            if (process.env.RUNNER_OS && !process.env.RUNNER_OS.toLowerCase().includes("windows"))
+                core_1.setFailed("This action only works in windows runner");
+            const token = core_1.getInput("github_token");
+            const workspaceHome = process.env.GITHUB_WORKSPACE;
+            const client = new github_1.GitHub(token);
+            const releases = (yield client.paginate(client.repos.listReleases.endpoint.merge(github_1.context.repo)));
+            const release = releases[1];
+            const reqInit = {
+                headers: [
+                    ["authorization", "Bearer " + token],
+                    ["content-type", "application/json"],
+                    ["accept", "application/octet-stream"],
+                ],
+                follow: 0,
+                redirect: "manual",
+            };
+            let vsixAsset = release.assets.find((a) => a.name.toLowerCase().includes(".vsix"));
+            if (!vsixAsset)
+                core_1.setFailed("Can't find any vsix file");
+            let response = yield node_fetch_1.default(vsixAsset.url, reqInit);
+            if (response.status === 302) {
+                const realResourceLocation = response.headers.get("location");
+                response = yield node_fetch_1.default(realResourceLocation);
+            }
+            const filePath = workspaceHome + "/" + vsixAsset.name;
+            yield streamPipeline(response.body, fs_1.default.createWriteStream(filePath));
+            const time = new Date().toTimeString();
+            core_1.setOutput("asset_file", filePath);
+            // Get the JSON webhook payload for the event that triggered the workflow
+            const payload = JSON.stringify(github_1.context.payload, undefined, 2);
+            console.log(`The event payload: ${payload}`);
+        }
+        catch (error) {
+            console.log("AL: error", error);
+            core_1.setFailed(error.message);
+        }
+    });
 }
-catch (error) {
-    core_1.default.setFailed(error.message);
-}
+run();
 
 
 /***/ }),
