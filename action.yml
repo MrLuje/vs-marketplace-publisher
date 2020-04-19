@@ -22,4 +22,4 @@ inputs:
 #     description: "File path to downloaded asset"
 runs:
   using: "node12"
-  main: "../dist/index.js"
+  main: "dist/index.js"
