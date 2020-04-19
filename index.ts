@@ -1,19 +1,32 @@
-import core from "@actions/core";
-import github from "@actions/github";
+import { setFailed, info } from "@actions/core";
+import { validateInputs, inputs } from "./libs/inputs";
+import { getLatestReleaseFile } from "./libs/release";
+import { publishToMarketplace } from "./libs/publish";
 
-try {
-  // `who-to-greet` input defined in action metadata file
-  const token = process.env.GITHUB_TOKEN!;
-  const client = new github.GitHub(token);
+async function run() {
+  try {
+    CheckRunnerIsWindows();
 
-  const releases = client.repos.listReleases.endpoint.merge({ page: 1 });
-  console.log("AL: releases", releases);
+    const inputs = validateInputs();
+    var packagePath = await getPackageFilePath(inputs);
 
-  const time = new Date().toTimeString();
-  core.setOutput("time", time);
-  // Get the JSON webhook payload for the event that triggered the workflow
-  const payload = JSON.stringify(github.context.payload, undefined, 2);
-  console.log(`The event payload: ${payload}`);
-} catch (error) {
-  core.setFailed(error.message);
+    const { manifestPath, pat } = inputs;
+    await publishToMarketplace(packagePath, manifestPath, pat);
+  } catch (error) {
+    setFailed(error.message);
+  }
+
+  async function getPackageFilePath(inputs: inputs) {
+    if (inputs.useLatestReleaseAsset) return getLatestReleaseFile();
+
+    info(`Using ${inputs.vsixPath} as package`);
+    return inputs.vsixPath;
+  }
+
+  function CheckRunnerIsWindows() {
+    if (process.env.RUNNER_OS && !process.env.RUNNER_OS.toLowerCase().includes("windows"))
+      setFailed("This action only works in windows runner");
+  }
 }
+
+run();

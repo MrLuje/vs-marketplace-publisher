@@ -147,6 +147,43 @@ module.exports = osName;
 
 /***/ }),
 
+/***/ 5:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const core_1 = __webpack_require__(470);
+const fs_1 = __importDefault(__webpack_require__(747));
+const path_1 = __importDefault(__webpack_require__(622));
+function validateInputs() {
+    const inputs = {
+        token: core_1.getInput("github_token", { required: true }),
+        pat: core_1.getInput("pat", { required: true }),
+        manifestPath: core_1.getInput("manifestPath", { required: true }),
+        vsixPath: core_1.getInput("vsixPath"),
+        useLatestReleaseAsset: core_1.getInput("useLatestReleaseAsset") && core_1.getInput("useLatestReleaseAsset").toLowerCase() === "true",
+    };
+    if (inputs.vsixPath && inputs.useLatestReleaseAsset) {
+        core_1.setFailed("Either vsixPath or useLatestReleaseAsset should be set, not both");
+    }
+    if (inputs.vsixPath) {
+        if (!fs_1.default.existsSync(inputs.vsixPath))
+            core_1.setFailed(`No file at vsixPath (${inputs.vsixPath})`);
+    }
+    if (!inputs.manifestPath.includes("/") && !inputs.manifestPath.includes("\\")) {
+        inputs.manifestPath = path_1.default.join(process.env.GITHUB_WORKSPACE, inputs.manifestPath);
+    }
+    return inputs;
+}
+exports.validateInputs = validateInputs;
+
+
+/***/ }),
+
 /***/ 9:
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -4989,6 +5026,58 @@ function errname(uv, code) {
 
 /***/ }),
 
+/***/ 429:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const core_1 = __webpack_require__(470);
+const util_1 = __importDefault(__webpack_require__(669));
+const child_process_1 = __webpack_require__(129);
+const exec = util_1.default.promisify(child_process_1.execFile);
+function publishToMarketplace(vsixPath, manifestPath, personalAccessToken) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let output = "";
+        let err = "";
+        const options = {
+            listeners: {
+                stdout: (data) => {
+                    output += data.toString();
+                },
+                stderr: (data) => {
+                    err += data.toString();
+                },
+            },
+            cwd: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\vssdk\\VisualStudioIntegration\\tools\\bin\\",
+        };
+        core_1.info("Publishing package to marketplace...");
+        try {
+            yield exec("VsixPublisher.exe", ["publish", "-payload", vsixPath, "-publishManifest", manifestPath, "-personalAccessToken", personalAccessToken], options);
+        }
+        catch (err) {
+            core_1.setFailed(err);
+        }
+        core_1.info("Successfully published package to marketplace !");
+        return true;
+    });
+}
+exports.publishToMarketplace = publishToMarketplace;
+
+
+/***/ }),
+
 /***/ 430:
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -7478,6 +7567,72 @@ function addHook (state, kind, name, hook) {
 
 /***/ }),
 
+/***/ 515:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const core_1 = __webpack_require__(470);
+const github_1 = __webpack_require__(469);
+const util_1 = __importDefault(__webpack_require__(669));
+const path_1 = __importDefault(__webpack_require__(622));
+const fs_1 = __importDefault(__webpack_require__(747));
+const node_fetch_1 = __importDefault(__webpack_require__(454));
+const stream_1 = __webpack_require__(413);
+const streamPipeline = util_1.default.promisify(stream_1.pipeline);
+function getLatestReleaseFile() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const token = core_1.getInput("github_token");
+        const client = new github_1.GitHub(token);
+        const releases = (yield client.paginate(client.repos.listReleases.endpoint.merge(github_1.context.repo)));
+        const release = releases.find((r) => r.assets.some((a) => a.name.toLowerCase().includes(".vsix")) && !r.draft);
+        if (!release)
+            core_1.setFailed("Can't find any release with a vsix file");
+        core_1.info(`Using assets from release ${release.id}`);
+        const reqInit = {
+            headers: [
+                ["authorization", "Bearer " + token],
+                ["content-type", "application/json"],
+                ["accept", "application/octet-stream"],
+            ],
+            follow: 0,
+            redirect: "manual",
+        };
+        let vsixAsset = release.assets.find((a) => a.name.toLowerCase().includes(".vsix"));
+        if (!vsixAsset)
+            core_1.setFailed("Can't find any vsix file");
+        core_1.info(`Downloading package ${vsixAsset.name}`);
+        let response = yield node_fetch_1.default(vsixAsset.url, reqInit);
+        if (response.status === 302) {
+            const realResourceLocation = response.headers.get("location");
+            response = yield node_fetch_1.default(realResourceLocation);
+        }
+        const workspaceHome = process.env.GITHUB_WORKSPACE;
+        const filePath = path_1.default.join(workspaceHome, vsixAsset.name);
+        yield streamPipeline(response.body, fs_1.default.createWriteStream(filePath));
+        if (!fs_1.default.existsSync(filePath))
+            core_1.error("Didn't succeed to download latest release");
+        core_1.info(`Using package ${vsixAsset.name}`);
+        return filePath;
+    });
+}
+exports.getLatestReleaseFile = getLatestReleaseFile;
+
+
+/***/ }),
+
 /***/ 523:
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -8643,27 +8798,46 @@ module.exports = (promise, onFinally) => {
 
 "use strict";
 
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const core_1 = __importDefault(__webpack_require__(470));
-const github_1 = __importDefault(__webpack_require__(469));
-try {
-    // `who-to-greet` input defined in action metadata file
-    const token = process.env.GITHUB_TOKEN;
-    const client = new github_1.default.GitHub(token);
-    const releases = client.repos.listReleases.endpoint.merge({ page: 1 });
-    console.log("AL: releases", releases);
-    const time = new Date().toTimeString();
-    core_1.default.setOutput("time", time);
-    // Get the JSON webhook payload for the event that triggered the workflow
-    const payload = JSON.stringify(github_1.default.context.payload, undefined, 2);
-    console.log(`The event payload: ${payload}`);
+const core_1 = __webpack_require__(470);
+const inputs_1 = __webpack_require__(5);
+const release_1 = __webpack_require__(515);
+const publish_1 = __webpack_require__(429);
+function run() {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            CheckRunnerIsWindows();
+            const inputs = inputs_1.validateInputs();
+            var packagePath = yield getPackageFilePath(inputs);
+            const { manifestPath, pat } = inputs;
+            yield publish_1.publishToMarketplace(packagePath, manifestPath, pat);
+        }
+        catch (error) {
+            core_1.setFailed(error.message);
+        }
+        function getPackageFilePath(inputs) {
+            return __awaiter(this, void 0, void 0, function* () {
+                if (inputs.useLatestReleaseAsset)
+                    return release_1.getLatestReleaseFile();
+                core_1.info(`Using ${inputs.vsixPath} as package`);
+                return inputs.vsixPath;
+            });
+        }
+        function CheckRunnerIsWindows() {
+            if (process.env.RUNNER_OS && !process.env.RUNNER_OS.toLowerCase().includes("windows"))
+                core_1.setFailed("This action only works in windows runner");
+        }
+    });
 }
-catch (error) {
-    core_1.default.setFailed(error.message);
-}
+run();
 
 
 /***/ }),
