@@ -27,7 +27,7 @@ export async function publishToMarketplace(vsixPath: string, manifestPath: strin
       options
     );
   } catch (err) {
-    setFailed(err);
+    setFailed(err.toString());
   }
 
   info("Successfully published package to marketplace !");

@@ -5030,7 +5030,7 @@ function publishToMarketplace(vsixPath, manifestPath, personalAccessToken) {
             yield exec("VsixPublisher.exe", ["publish", "-payload", vsixPath, "-publishManifest", manifestPath, "-personalAccessToken", personalAccessToken], options);
         }
         catch (err) {
-            core_1.setFailed(err);
+            core_1.setFailed(err.toString());
         }
         core_1.info("Successfully published package to marketplace !");
         return true;
