@@ -9783,7 +9783,7 @@ function run() {
             CheckRunnerIsWindows();
             const inputs = validateInputs();
             var packagePath = yield getPackageFilePath(inputs);
-            const { vsixPath, manifestPath, pat } = inputs;
+            const { manifestPath, pat } = inputs;
             yield publishToMarketplace(packagePath, manifestPath, pat);
         }
         catch (error) {
@@ -9805,7 +9805,7 @@ function run() {
                     cwd: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\vssdk\\VisualStudioIntegration\\tools\\bin\\",
                 };
                 core_1.info("Publishing package to marketplace...");
-                const exitCode = yield exec_1.exec("vsixpublisher.exe", ["publish", "-payload", vsixPath, "-publishManifest", manifestPath, "-personalAccessToken", personalAccessToken], options);
+                const exitCode = yield exec_1.exec("VsixPublisher.exe", ["publish", "-payload", vsixPath, "-publishManifest", manifestPath, "-personalAccessToken", personalAccessToken], options);
                 const success = exitCode === 0;
                 if (!success) {
                     core_1.error(err);

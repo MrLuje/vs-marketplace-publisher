@@ -11,6 +11,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
+      # Runs a single command using the runners shell
+      - name: Run a one-line script
+        run: dir "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\vssdk\VisualStudioIntegration\tools\bin\*.exe"
+
+      - name: Run a one-line script
+        run: dir "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\vssdk\VisualStudioIntegration\tools\bin\VsixPublisher.exe"
+
       - name: Download latest assets
         id: download_asset
         uses: ./ #mrluje/vs-marketplace-publisher@v2

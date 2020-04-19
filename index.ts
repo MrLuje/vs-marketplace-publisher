@@ -49,7 +49,7 @@ async function run() {
     const inputs = validateInputs();
     var packagePath = await getPackageFilePath(inputs);
 
-    const { vsixPath, manifestPath, pat } = inputs;
+    const { manifestPath, pat } = inputs;
     await publishToMarketplace(packagePath, manifestPath, pat);
   } catch (error) {
     setFailed(error.message);
@@ -72,7 +72,7 @@ async function run() {
 
     info("Publishing package to marketplace...");
     const exitCode = await exec(
-      "vsixpublisher.exe",
+      "VsixPublisher.exe",
       ["publish", "-payload", vsixPath, "-publishManifest", manifestPath, "-personalAccessToken", personalAccessToken],
       options
     );
