@@ -15,7 +15,10 @@ jobs:
         id: download_asset
         uses: ./ #mrluje/vs-marketplace-publisher@v2
         with:
-          github_token: ${{ secrets.github_token }}
+          # github_token: ${{ secrets.github_token }}
+          pat: ${{ secrets.vs_pat }}
+          manifestPath: vsixManifest.json
+          useLatestReleaseAsset: true
       # Use the output from the `hello` step
       - name: Check downloaded file
         run: |

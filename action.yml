@@ -1,12 +1,25 @@
 name: "VS Marketplace Publisher"
 description: "Publish VisualStudio extension to the Marketplace"
 inputs:
-  token: # id of input
-    description: "Token to access you repository"
+  token:
+    description: "Token to access your github repository."
     required: true
-outputs:
-  asset_file:
-    description: "File path to downloaded asset"
+    default: ${{ github.token }}
+  pat:
+    description: "Personal access token to access your marketplace account."
+    required: true
+  manifestPath:
+    description: "Path to the extension manifest."
+    required: true
+  vsixPath:
+    description: "Path to the extension package. Exclusive with useLatestReleaseAsset."
+    required: false
+  useLatestReleaseAsset:
+    description: "Use the latest release from your repository that contains a vsix. Exclusive with vsixPath."
+    required: false
+# outputs:
+#   asset_file:
+#     description: "File path to downloaded asset"
 runs:
   using: "node12"
   main: "../dist/index.js"
