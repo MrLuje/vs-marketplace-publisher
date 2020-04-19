@@ -9809,11 +9809,13 @@ function run() {
                         error += data.toString();
                     },
                 };
+                core_1.default.info("Publishing package to marketplace...");
                 const exitCode = yield exec_1.exec("C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\vssdk\\VisualStudioIntegration\\tools\\bin\\vsixpublisher.exe", ["publish", "-payload", vsixPath, "-publishManifest", manifestPath, "-personalAccessToken", personalAccessToken], options);
                 const success = exitCode === 0;
                 if (!success) {
                     core_1.default.error(error);
                 }
+                core_1.default.info("Successfully published package to marketplace !");
                 return success;
             });
         }
@@ -9822,7 +9824,10 @@ function run() {
                 const token = core_1.getInput("github_token");
                 const client = new github_1.GitHub(token);
                 const releases = (yield client.paginate(client.repos.listReleases.endpoint.merge(github_1.context.repo)));
-                const release = releases[1];
+                const release = releases.find((r) => r.assets.some((a) => a.name.toLowerCase().includes(".vsix")));
+                if (!release)
+                    core_1.setFailed("Can't find any release with a vsix file");
+                core_1.default.info(`Using assets from release ${release.id}`);
                 const reqInit = {
                     headers: [
                         ["authorization", "Bearer " + token],
@@ -9835,6 +9840,7 @@ function run() {
                 let vsixAsset = release.assets.find((a) => a.name.toLowerCase().includes(".vsix"));
                 if (!vsixAsset)
                     core_1.setFailed("Can't find any vsix file");
+                core_1.default.info(`Downloading package ${vsixAsset.name}`);
                 let response = yield node_fetch_1.default(vsixAsset.url, reqInit);
                 if (response.status === 302) {
                     const realResourceLocation = response.headers.get("location");
@@ -9845,6 +9851,7 @@ function run() {
                 yield streamPipeline(response.body, fs_1.default.createWriteStream(filePath));
                 if (!fs_1.default.existsSync(filePath))
                     core_1.default.error("Didn't succeed to download latest release");
+                core_1.default.info(`Using package ${vsixAsset.name}`);
                 return filePath;
             });
         }
@@ -9852,6 +9859,7 @@ function run() {
             return __awaiter(this, void 0, void 0, function* () {
                 if (inputs.useLatestReleaseAsset)
                     return getLatestReleaseFile();
+                core_1.default.info(`Using ${inputs.vsixPath} as package`);
                 return inputs.vsixPath;
             });
         }
