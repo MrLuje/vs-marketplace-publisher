@@ -29,6 +29,10 @@ export function validateInputs() {
 
   if (!inputs.manifestPath.includes("/") && !inputs.manifestPath.includes("\\")) {
     inputs.manifestPath = path.join(process.env.GITHUB_WORKSPACE!, inputs.manifestPath);
+
+    if (!fs.existsSync(inputs.manifestPath)) {
+      setFailed(`No file at manifestPath (${inputs.manifestPath})`);
+    }
   }
 
   return inputs;

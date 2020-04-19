@@ -24856,6 +24856,9 @@ function validateInputs() {
     }
     if (!inputs.manifestPath.includes("/") && !inputs.manifestPath.includes("\\")) {
         inputs.manifestPath = path_1.default.join(process.env.GITHUB_WORKSPACE, inputs.manifestPath);
+        if (!fs_1.default.existsSync(inputs.manifestPath)) {
+            core_1.setFailed(`No file at manifestPath (${inputs.manifestPath})`);
+        }
     }
     return inputs;
 }
