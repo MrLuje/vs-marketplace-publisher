@@ -1,7 +1,7 @@
 name: "VS Marketplace Publisher"
 description: "Publish VisualStudio extension to the Marketplace"
 inputs:
-  token:
+  github_token:
     description: "Token to access your github repository."
     required: true
     default: ${{ github.token }}
