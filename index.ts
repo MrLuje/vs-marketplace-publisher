@@ -58,19 +58,21 @@ async function run() {
   async function publishToMarketplace(vsixPath: string, manifestPath: string, personalAccessToken: string): Promise<boolean> {
     let output = "";
     let err = "";
-    const options: ExecOptions = {};
-    options.listeners = {
-      stdout: (data: Buffer) => {
-        output += data.toString();
+    const options: ExecOptions = {
+      listeners: {
+        stdout: (data: Buffer) => {
+          output += data.toString();
+        },
+        stderr: (data: Buffer) => {
+          err += data.toString();
+        },
       },
-      stderr: (data: Buffer) => {
-        err += data.toString();
-      },
+      cwd: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\vssdk\\VisualStudioIntegration\\tools\\bin\\",
     };
 
     info("Publishing package to marketplace...");
     const exitCode = await exec(
-      "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\vssdk\\VisualStudioIntegration\\tools\\bin\\vsixpublisher.exe",
+      "vsixpublisher.exe",
       ["publish", "-payload", vsixPath, "-publishManifest", manifestPath, "-personalAccessToken", personalAccessToken],
       options
     );

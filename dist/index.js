@@ -9793,17 +9793,19 @@ function run() {
             return __awaiter(this, void 0, void 0, function* () {
                 let output = "";
                 let err = "";
-                const options = {};
-                options.listeners = {
-                    stdout: (data) => {
-                        output += data.toString();
+                const options = {
+                    listeners: {
+                        stdout: (data) => {
+                            output += data.toString();
+                        },
+                        stderr: (data) => {
+                            err += data.toString();
+                        },
                     },
-                    stderr: (data) => {
-                        err += data.toString();
-                    },
+                    cwd: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\vssdk\\VisualStudioIntegration\\tools\\bin\\",
                 };
                 core_1.info("Publishing package to marketplace...");
-                const exitCode = yield exec_1.exec("C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\vssdk\\VisualStudioIntegration\\tools\\bin\\vsixpublisher.exe", ["publish", "-payload", vsixPath, "-publishManifest", manifestPath, "-personalAccessToken", personalAccessToken], options);
+                const exitCode = yield exec_1.exec("vsixpublisher.exe", ["publish", "-payload", vsixPath, "-publishManifest", manifestPath, "-personalAccessToken", personalAccessToken], options);
                 const success = exitCode === 0;
                 if (!success) {
                     core_1.error(err);
