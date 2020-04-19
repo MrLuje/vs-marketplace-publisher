@@ -147,43 +147,6 @@ module.exports = osName;
 
 /***/ }),
 
-/***/ 5:
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const core_1 = __webpack_require__(470);
-const fs_1 = __importDefault(__webpack_require__(747));
-const path_1 = __importDefault(__webpack_require__(622));
-function validateInputs() {
-    const inputs = {
-        token: core_1.getInput("github_token", { required: true }),
-        pat: core_1.getInput("pat", { required: true }),
-        manifestPath: core_1.getInput("manifestPath", { required: true }),
-        vsixPath: core_1.getInput("vsixPath"),
-        useLatestReleaseAsset: core_1.getInput("useLatestReleaseAsset") && core_1.getInput("useLatestReleaseAsset").toLowerCase() === "true",
-    };
-    if (inputs.vsixPath && inputs.useLatestReleaseAsset) {
-        core_1.setFailed("Either vsixPath or useLatestReleaseAsset should be set, not both");
-    }
-    if (inputs.vsixPath) {
-        if (!fs_1.default.existsSync(inputs.vsixPath))
-            core_1.setFailed(`No file at vsixPath (${inputs.vsixPath})`);
-    }
-    if (!inputs.manifestPath.includes("/") && !inputs.manifestPath.includes("\\")) {
-        inputs.manifestPath = path_1.default.join(process.env.GITHUB_WORKSPACE, inputs.manifestPath);
-    }
-    return inputs;
-}
-exports.validateInputs = validateInputs;
-
-
-/***/ }),
-
 /***/ 9:
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -7046,7 +7009,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 // Originally pulled from https://github.com/JasonEtco/actions-toolkit/blob/master/src/github.ts
-const graphql_1 = __webpack_require__(898);
+const graphql_1 = __webpack_require__(743);
 const rest_1 = __webpack_require__(0);
 const Context = __importStar(__webpack_require__(262));
 const httpClient = __importStar(__webpack_require__(539));
@@ -7597,7 +7560,10 @@ function getLatestReleaseFile() {
         const token = core_1.getInput("github_token");
         const client = new github_1.GitHub(token);
         const releases = (yield client.paginate(client.repos.listReleases.endpoint.merge(github_1.context.repo)));
-        const release = releases.find((r) => r.assets.some((a) => a.name.toLowerCase().includes(".vsix")) && !r.draft);
+        const releasesByPublishedDateDesc = releases
+            .filter((r) => r)
+            .sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
+        const release = releasesByPublishedDateDesc.find((r) => r.assets.some((a) => a.name.toLowerCase().includes(".vsix")) && !r.draft);
         if (!release)
             core_1.setFailed("Can't find any release with a vsix file");
         core_1.info(`Using assets from release ${release.id}`);
@@ -8808,7 +8774,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const core_1 = __webpack_require__(470);
-const inputs_1 = __webpack_require__(5);
+const inputs_1 = __webpack_require__(898);
 const release_1 = __webpack_require__(515);
 const publish_1 = __webpack_require__(429);
 function run() {
@@ -8902,6 +8868,99 @@ function sync (path, options) {
     }
   }
 }
+
+
+/***/ }),
+
+/***/ 743:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, '__esModule', { value: true });
+
+var request = __webpack_require__(753);
+var universalUserAgent = __webpack_require__(796);
+
+const VERSION = "4.3.1";
+
+class GraphqlError extends Error {
+  constructor(request, response) {
+    const message = response.data.errors[0].message;
+    super(message);
+    Object.assign(this, response.data);
+    this.name = "GraphqlError";
+    this.request = request; // Maintains proper stack trace (only available on V8)
+
+    /* istanbul ignore next */
+
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+  }
+
+}
+
+const NON_VARIABLE_OPTIONS = ["method", "baseUrl", "url", "headers", "request", "query"];
+function graphql(request, query, options) {
+  options = typeof query === "string" ? options = Object.assign({
+    query
+  }, options) : options = query;
+  const requestOptions = Object.keys(options).reduce((result, key) => {
+    if (NON_VARIABLE_OPTIONS.includes(key)) {
+      result[key] = options[key];
+      return result;
+    }
+
+    if (!result.variables) {
+      result.variables = {};
+    }
+
+    result.variables[key] = options[key];
+    return result;
+  }, {});
+  return request(requestOptions).then(response => {
+    if (response.data.errors) {
+      throw new GraphqlError(requestOptions, {
+        data: response.data
+      });
+    }
+
+    return response.data.data;
+  });
+}
+
+function withDefaults(request$1, newDefaults) {
+  const newRequest = request$1.defaults(newDefaults);
+
+  const newApi = (query, options) => {
+    return graphql(newRequest, query, options);
+  };
+
+  return Object.assign(newApi, {
+    defaults: withDefaults.bind(null, newRequest),
+    endpoint: request.request.endpoint
+  });
+}
+
+const graphql$1 = withDefaults(request.request, {
+  headers: {
+    "user-agent": `octokit-graphql.js/${VERSION} ${universalUserAgent.getUserAgent()}`
+  },
+  method: "POST",
+  url: "/graphql"
+});
+function withCustomRequest(customRequest) {
+  return withDefaults(customRequest, {
+    method: "POST",
+    url: "/graphql"
+  });
+}
+
+exports.graphql = graphql$1;
+exports.withCustomRequest = withCustomRequest;
+//# sourceMappingURL=index.js.map
 
 
 /***/ }),
@@ -24773,90 +24832,34 @@ module.exports = set;
 
 "use strict";
 
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
-var request = __webpack_require__(753);
-var universalUserAgent = __webpack_require__(796);
-
-const VERSION = "4.3.1";
-
-class GraphqlError extends Error {
-  constructor(request, response) {
-    const message = response.data.errors[0].message;
-    super(message);
-    Object.assign(this, response.data);
-    this.name = "GraphqlError";
-    this.request = request; // Maintains proper stack trace (only available on V8)
-
-    /* istanbul ignore next */
-
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const core_1 = __webpack_require__(470);
+const fs_1 = __importDefault(__webpack_require__(747));
+const path_1 = __importDefault(__webpack_require__(622));
+function validateInputs() {
+    const inputs = {
+        token: core_1.getInput("github_token", { required: true }),
+        pat: core_1.getInput("pat", { required: true }),
+        manifestPath: core_1.getInput("manifestPath", { required: true }),
+        vsixPath: core_1.getInput("vsixPath"),
+        useLatestReleaseAsset: core_1.getInput("useLatestReleaseAsset") && core_1.getInput("useLatestReleaseAsset").toLowerCase() === "true",
+    };
+    if (inputs.vsixPath && inputs.useLatestReleaseAsset) {
+        core_1.setFailed("Either vsixPath or useLatestReleaseAsset should be set, not both");
     }
-  }
-
-}
-
-const NON_VARIABLE_OPTIONS = ["method", "baseUrl", "url", "headers", "request", "query"];
-function graphql(request, query, options) {
-  options = typeof query === "string" ? options = Object.assign({
-    query
-  }, options) : options = query;
-  const requestOptions = Object.keys(options).reduce((result, key) => {
-    if (NON_VARIABLE_OPTIONS.includes(key)) {
-      result[key] = options[key];
-      return result;
+    if (inputs.vsixPath) {
+        if (!fs_1.default.existsSync(inputs.vsixPath))
+            core_1.setFailed(`No file at vsixPath (${inputs.vsixPath})`);
     }
-
-    if (!result.variables) {
-      result.variables = {};
+    if (!inputs.manifestPath.includes("/") && !inputs.manifestPath.includes("\\")) {
+        inputs.manifestPath = path_1.default.join(process.env.GITHUB_WORKSPACE, inputs.manifestPath);
     }
-
-    result.variables[key] = options[key];
-    return result;
-  }, {});
-  return request(requestOptions).then(response => {
-    if (response.data.errors) {
-      throw new GraphqlError(requestOptions, {
-        data: response.data
-      });
-    }
-
-    return response.data.data;
-  });
+    return inputs;
 }
-
-function withDefaults(request$1, newDefaults) {
-  const newRequest = request$1.defaults(newDefaults);
-
-  const newApi = (query, options) => {
-    return graphql(newRequest, query, options);
-  };
-
-  return Object.assign(newApi, {
-    defaults: withDefaults.bind(null, newRequest),
-    endpoint: request.request.endpoint
-  });
-}
-
-const graphql$1 = withDefaults(request.request, {
-  headers: {
-    "user-agent": `octokit-graphql.js/${VERSION} ${universalUserAgent.getUserAgent()}`
-  },
-  method: "POST",
-  url: "/graphql"
-});
-function withCustomRequest(customRequest) {
-  return withDefaults(customRequest, {
-    method: "POST",
-    url: "/graphql"
-  });
-}
-
-exports.graphql = graphql$1;
-exports.withCustomRequest = withCustomRequest;
-//# sourceMappingURL=index.js.map
+exports.validateInputs = validateInputs;
 
 
 /***/ }),

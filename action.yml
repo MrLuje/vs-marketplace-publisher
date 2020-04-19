@@ -17,9 +17,6 @@ inputs:
   useLatestReleaseAsset:
     description: "Use the latest release from your repository that contains a vsix. Exclusive with vsixPath."
     required: false
-# outputs:
-#   asset_file:
-#     description: "File path to downloaded asset"
 runs:
   using: "node12"
   main: "dist/index.js"
