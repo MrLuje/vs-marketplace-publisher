@@ -69,7 +69,7 @@ async function run() {
     };
 
     const exitCode = await exec(
-      "C:Program Files (x86)Microsoft Visual Studio\\2019\\Enterprise\\vssdkVisualStudioIntegration\\tools\\bin\\vsixpublisher.exe",
+      "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\vssdk\\VisualStudioIntegration\\tools\\bin\\vsixpublisher.exe",
       ["publish", "-payload", vsixPath, "-publishManifest", manifestPath, "-personalAccessToken", personalAccessToken],
       options
     );

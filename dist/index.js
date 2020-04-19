@@ -9809,7 +9809,7 @@ function run() {
                         error += data.toString();
                     },
                 };
-                const exitCode = yield exec_1.exec("C:Program Files (x86)Microsoft Visual Studio\\2019\\Enterprise\\vssdkVisualStudioIntegration\\tools\\bin\\vsixpublisher.exe", ["publish", "-payload", vsixPath, "-publishManifest", manifestPath, "-personalAccessToken", personalAccessToken], options);
+                const exitCode = yield exec_1.exec("C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\vssdk\\VisualStudioIntegration\\tools\\bin\\vsixpublisher.exe", ["publish", "-payload", vsixPath, "-publishManifest", manifestPath, "-personalAccessToken", personalAccessToken], options);
                 const success = exitCode === 0;
                 if (!success) {
                     core_1.default.error(error);
