@@ -13,7 +13,11 @@ export async function getLatestReleaseFile() {
   const client = new GitHub(token);
 
   const releases = (await client.paginate(client.repos.listReleases.endpoint.merge(context.repo))) as WebhookPayloadReleaseRelease[];
-  const release = releases.find((r) => r.assets.some((a) => a.name.toLowerCase().includes(".vsix")) && !r.draft);
+  const releasesByPublishedDateDesc = releases
+    .filter((r) => r)
+    .sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
+  const release = releasesByPublishedDateDesc.find((r) => r.assets.some((a) => a.name.toLowerCase().includes(".vsix")) && !r.draft);
+
   if (!release) setFailed("Can't find any release with a vsix file");
   info(`Using assets from release ${release!.id}`);
 
