@@ -9744,18 +9744,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const core_1 = __importStar(__webpack_require__(470));
+const core_1 = __webpack_require__(470);
 const github_1 = __webpack_require__(469);
 const fs_1 = __importDefault(__webpack_require__(747));
 const node_fetch_1 = __importDefault(__webpack_require__(454));
@@ -9799,23 +9792,23 @@ function run() {
         function publishToMarketplace(vsixPath, manifestPath, personalAccessToken) {
             return __awaiter(this, void 0, void 0, function* () {
                 let output = "";
-                let error = "";
+                let err = "";
                 const options = {};
                 options.listeners = {
                     stdout: (data) => {
                         output += data.toString();
                     },
                     stderr: (data) => {
-                        error += data.toString();
+                        err += data.toString();
                     },
                 };
-                core_1.default.info("Publishing package to marketplace...");
+                core_1.info("Publishing package to marketplace...");
                 const exitCode = yield exec_1.exec("C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\vssdk\\VisualStudioIntegration\\tools\\bin\\vsixpublisher.exe", ["publish", "-payload", vsixPath, "-publishManifest", manifestPath, "-personalAccessToken", personalAccessToken], options);
                 const success = exitCode === 0;
                 if (!success) {
-                    core_1.default.error(error);
+                    core_1.error(err);
                 }
-                core_1.default.info("Successfully published package to marketplace !");
+                core_1.info("Successfully published package to marketplace !");
                 return success;
             });
         }
@@ -9827,7 +9820,7 @@ function run() {
                 const release = releases.find((r) => r.assets.some((a) => a.name.toLowerCase().includes(".vsix")));
                 if (!release)
                     core_1.setFailed("Can't find any release with a vsix file");
-                core_1.default.info(`Using assets from release ${release.id}`);
+                core_1.info(`Using assets from release ${release.id}`);
                 const reqInit = {
                     headers: [
                         ["authorization", "Bearer " + token],
@@ -9840,7 +9833,7 @@ function run() {
                 let vsixAsset = release.assets.find((a) => a.name.toLowerCase().includes(".vsix"));
                 if (!vsixAsset)
                     core_1.setFailed("Can't find any vsix file");
-                core_1.default.info(`Downloading package ${vsixAsset.name}`);
+                core_1.info(`Downloading package ${vsixAsset.name}`);
                 let response = yield node_fetch_1.default(vsixAsset.url, reqInit);
                 if (response.status === 302) {
                     const realResourceLocation = response.headers.get("location");
@@ -9850,8 +9843,8 @@ function run() {
                 const filePath = path_1.default.join(workspaceHome, vsixAsset.name);
                 yield streamPipeline(response.body, fs_1.default.createWriteStream(filePath));
                 if (!fs_1.default.existsSync(filePath))
-                    core_1.default.error("Didn't succeed to download latest release");
-                core_1.default.info(`Using package ${vsixAsset.name}`);
+                    core_1.error("Didn't succeed to download latest release");
+                core_1.info(`Using package ${vsixAsset.name}`);
                 return filePath;
             });
         }
@@ -9859,7 +9852,7 @@ function run() {
             return __awaiter(this, void 0, void 0, function* () {
                 if (inputs.useLatestReleaseAsset)
                     return getLatestReleaseFile();
-                core_1.default.info(`Using ${inputs.vsixPath} as package`);
+                core_1.info(`Using ${inputs.vsixPath} as package`);
                 return inputs.vsixPath;
             });
         }
