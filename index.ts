@@ -1,13 +1,14 @@
-import { getInput, setOutput, setFailed, info, error } from "@actions/core";
-import github, { GitHub, context } from "@actions/github";
+import { getInput, setFailed, info, error } from "@actions/core";
+import { GitHub, context } from "@actions/github";
 import { WebhookPayloadReleaseRelease } from "@octokit/webhooks";
 import fs from "fs";
 import fetch from "node-fetch";
 import { pipeline } from "stream";
 import util from "util";
 import path from "path";
-import { exec } from "@actions/exec";
+import { execFile } from "child_process";
 import { ExecOptions } from "@actions/exec/lib/interfaces";
+const exec = util.promisify(execFile);
 const streamPipeline = util.promisify(pipeline);
 
 type inputs = {
@@ -71,19 +72,19 @@ async function run() {
     };
 
     info("Publishing package to marketplace...");
-    const exitCode = await exec(
-      "VsixPublisher.exe",
-      ["publish", "-payload", vsixPath, "-publishManifest", manifestPath, "-personalAccessToken", personalAccessToken],
-      options
-    );
-
-    const success = exitCode === 0;
-    if (!success) {
-      error(err);
+    try {
+      await exec(
+        "VsixPublisher.exe",
+        ["publish", "-payload", vsixPath, "-publishManifest", manifestPath, "-personalAccessToken", personalAccessToken],
+        options
+      );
+    } catch (err) {
+      setFailed(err);
     }
+
     info("Successfully published package to marketplace !");
 
-    return success;
+    return true;
   }
 
   async function getLatestReleaseFile() {
