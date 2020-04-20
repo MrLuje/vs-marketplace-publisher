@@ -85,7 +85,14 @@ jobs:
           # (Required) Path to the manifest used for the publish (e.g.: https://docs.microsoft.com/fr-fr/visualstudio/extensibility/walkthrough-publishing-a-visual-studio-extension-via-command-line?view=vs-2019#publishmanifest-file)
           manifestPath: vs-extension/vsixManifest.json
           
-          # (Optional) Fetch the latest release container a vsix package for upload to the VS Marketplace
+          # (Optional) Path to an extension package
           vsixPath: ${{ env.vsixContainer }}
           
-       
+## Inputs
+
+Input | Required | Description
+--- | --- | ---
+pat | Y | Personal access token to perform action on the VS Marketplace ([How to](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#get-a-personal-access-token))
+manifestPath | Y | Path to the manifest used for the publish (e.g.: https://docs.microsoft.com/fr-fr/visualstudio/extensibility/walkthrough-publishing-a-visual-studio-extension-via-command-line?view=vs-2019#publishmanifest-file)
+useLatestReleaseAsset | N | Fetch the latest release container a vsix package for upload to the VS Marketplace
+vsixPath | N | Path to an extension package
