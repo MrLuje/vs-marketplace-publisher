@@ -1,5 +1,8 @@
 name: "VS Marketplace Publisher"
 description: "Publish VisualStudio extension to the Marketplace"
+branding:
+  icon: 'package'  
+  color: 'red'
 inputs:
   github_token:
     description: "Token to access your github repository."
