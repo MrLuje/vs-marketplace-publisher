@@ -24854,7 +24854,7 @@ function validateInputs() {
         if (!fs_1.default.existsSync(inputs.vsixPath))
             core_1.setFailed(`No file at vsixPath (${inputs.vsixPath})`);
     }
-    if (!inputs.manifestPath.includes("/") && !inputs.manifestPath.includes("\\")) {
+    if (!path_1.default.isAbsolute(inputs.manifestPath)) {
         inputs.manifestPath = path_1.default.join(process.env.GITHUB_WORKSPACE, inputs.manifestPath);
         if (!fs_1.default.existsSync(inputs.manifestPath)) {
             core_1.setFailed(`No file at manifestPath (${inputs.manifestPath})`);
