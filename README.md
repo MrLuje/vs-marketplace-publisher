@@ -1,15 +1,18 @@
-# vs-marketplace-publisher
-Publish your Visual Studio extension to the marketplace
+# ✨ vs-marketplace-publisher
+
+Github action to publish your Visual Studio extension to the marketplace
 
 ## Usage
 
 You can use the VS Marketplace Publisher GitHub Action in a [GitHub Actions Workflow](https://help.github.com/en/articles/about-github-actions) by configuring a YAML-based workflow file, e.g. `.github/workflows/publish.yml`, in two differents ways:
+
 - Triggered when a release containing a vsix package is created
 - Use an already generated vsix package from a previous action step
 
 **This action only works on windows runner**
 
 ### From a release
+
 ```yaml
 name: Publish to VS Marketplace
 
@@ -23,22 +26,23 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-        
+
       - name: Publish release to marketplace
         id: publish
         uses: mrluje/vs-marketplace-publisher@v2
         with:
           # (Required) Personal access token to perform action on the VS Marketplace
           pat: ${{ secrets.vs_pat }}
-          
-          # (Required) Path to the manifest used for the publish (e.g.: https://docs.microsoft.com/fr-fr/visualstudio/extensibility/walkthrough-publishing-a-visual-studio-extension-via-command-line?view=vs-2019#publishmanifest-file)
+
+          # (Required) Path to the manifest used for the publish
           manifestPath: vs-extension/vsixManifest.json
-          
+
           # (Optional) Fetch the latest release container a vsix package for upload to the VS Marketplace
           useLatestReleaseAsset: true
-```          
-       
+```
+
 ### From a locally generated package
+
 ```yaml
 name: Publish to VS Marketplace
 
@@ -58,12 +62,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      
+
       - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.0      
+        uses: microsoft/setup-msbuild@v1.0.0
       - uses: nuget/setup-nuget@v1
         with:
-          nuget-version: '5.x'
+          nuget-version: "5.x"
 
       - name: Add VSTest to PATH
         uses: darenm/Setup-VSTest@v1
@@ -74,18 +78,32 @@ jobs:
       - name: MSBuild ${{ env.solution }}
         run: |
           msbuild ${{ env.solution }} /p:Configuration=${{ env.config }} /p:TargetVsixContainer=${{ env.vsixContainer }} /p:DeployExtension=False /verbosity:minimal
-        
+
       - name: Publish release to marketplace
         id: publish
         uses: mrluje/vs-marketplace-publisher@v2
         with:
           # (Required) Personal access token to perform action on the VS Marketplace
           pat: ${{ secrets.vs_pat }}
-          
-          # (Required) Path to the manifest used for the publish (e.g.: https://docs.microsoft.com/fr-fr/visualstudio/extensibility/walkthrough-publishing-a-visual-studio-extension-via-command-line?view=vs-2019#publishmanifest-file)
+
+          # (Required) Path to the manifest used for the publish
           manifestPath: vs-extension/vsixManifest.json
-          
-          # (Optional) Fetch the latest release container a vsix package for upload to the VS Marketplace
+
+          # (Optional) Path to an extension package
           vsixPath: ${{ env.vsixContainer }}
-          
-       
+```
+
+## Inputs
+
+| Input                 | Required | Description                                                                                                                                                                                                           |
+| --------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| pat                   | Y        | Personal access token to perform action on the VS Marketplace ([How to](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#get-a-personal-access-token))                                  |
+| manifestPath          | Y        | Path to the manifest used for the publish ([Schema](https://docs.microsoft.com/fr-fr/visualstudio/extensibility/walkthrough-publishing-a-visual-studio-extension-via-command-line?view=vs-2019#publishmanifest-file)) |
+| useLatestReleaseAsset | N        | Fetch the latest release container a vsix package for upload to the VS Marketplace                                                                                                                                    |
+| vsixPath              | N        | Path to an extension package                                                                                                                                                                                          |
+
+Either _useLatestReleaseAsset_ or _vsixPath_ must be used
+
+```
+
+```
