@@ -24,7 +24,12 @@ export function validateInputs() {
   }
 
   if (inputs.vsixPath) {
-    if (!fs.existsSync(inputs.vsixPath)) setFailed(`No file at vsixPath (${inputs.vsixPath})`);
+    if (!fs.existsSync(inputs.vsixPath)) {
+      inputs.vsixPath =  path.join(process.env.GITHUB_WORKSPACE!, inputs.vsixPath);
+    }
+    if (!fs.existsSync(inputs.vsixPath)) {
+      setFailed(`No file at vsixPath (${inputs.vsixPath})`);
+    }
   }
 
   if (!fs.existsSync(inputs.manifestPath)) {
